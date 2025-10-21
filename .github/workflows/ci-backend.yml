@@ -47,17 +47,17 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build & (conditionally) push backend-api image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend-api
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-backend:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+      - name: Normalize mvnw line endings and make executable
+        run: |
+          sed -i 's/\r$//' backend-api/mvnw
+          chmod +x backend-api/mvnw
+          head -n 1 backend-api/mvnw
 
-      - name: Build & (conditionally) push db image
-        if: ${{ hashFiles('db/Dockerfile') != '' }}
-        uses: docker/build-push-action@v6
-        with:
-          context: ./db
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-db:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
+      - name: SonarCloud analysis
+        run: |
+          ./backend-api/mvnw -B verify sonar:sonar -DskipTests=false \
+            -Dsonar.projectKey=etchakou_docker-td \
+            -Dsonar.organization=etchakou \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
