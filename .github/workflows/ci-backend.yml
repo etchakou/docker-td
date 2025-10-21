@@ -20,32 +20,21 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Build & test with Maven Wrapper (force cd)
+      - name: Debug workspace
         shell: bash
         run: |
-          echo "== ROOT =="
-          pwd
+          echo "PWD (root workspace) = $(pwd)"
           ls -la
+          echo "---- backend-api listing ----"
+          ls -la backend-api || true
 
-          if [ ! -d "backend-api" ]; then
-            echo "❌ Dossier 'backend-api' introuvable à la racine. Contenu réel :"
-            ls -la
-            exit 1
-          fi
+      # On rend le wrapper exécutable par son chemin depuis la racine
+      - name: Make mvnw executable
+        shell: bash
+        run: chmod +x backend-api/mvnw
 
-          echo "== ENTER backend-api =="
-          cd backend-api
-          pwd
-          ls -la
-
-          if [ ! -f "pom.xml" ]; then
-            echo "❌ pom.xml introuvable dans backend-api"
-            exit 1
-          fi
-          if [ ! -f "mvnw" ]; then
-            echo "❌ mvnw introuvable dans backend-api"
-            exit 1
-          fi
-
-          chmod +x mvnw
-          ./mvnw -B clean verify
+      # Lancement du build en pointant explicitement vers le POM
+      - name: Build & test with Maven Wrapper (explicit -f)
+        shell: bash
+        run: |
+          ./backend-api/mvnw -B -f backend-api/pom.xml clean verify
