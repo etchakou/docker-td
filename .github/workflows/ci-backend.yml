@@ -20,24 +20,32 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Debug: vérifier où on se trouve et ce qu'il y a dedans
-      - name: Debug paths (root)
+      - name: Build & test with Maven Wrapper (force cd)
+        shell: bash
         run: |
+          echo "== ROOT =="
           pwd
           ls -la
 
-      - name: Debug paths (backend-api)
-        working-directory: backend-api
-        run: |
+          if [ ! -d "backend-api" ]; then
+            echo "❌ Dossier 'backend-api' introuvable à la racine. Contenu réel :"
+            ls -la
+            exit 1
+          fi
+
+          echo "== ENTER backend-api =="
+          cd backend-api
           pwd
           ls -la
-          test -f pom.xml && echo "pom.xml found ✅" || (echo "pom.xml missing ❌" && exit 1)
-          test -f mvnw && echo "mvnw found ✅" || (echo "mvnw missing ❌" && exit 1)
 
-      - name: Make mvnw executable (Linux)
-        working-directory: backend-api
-        run: chmod +x mvnw
+          if [ ! -f "pom.xml" ]; then
+            echo "❌ pom.xml introuvable dans backend-api"
+            exit 1
+          fi
+          if [ ! -f "mvnw" ]; then
+            echo "❌ mvnw introuvable dans backend-api"
+            exit 1
+          fi
 
-      - name: Build & test with Maven Wrapper
-        working-directory: backend-api
-        run: ./mvnw -B clean verify
+          chmod +x mvnw
+          ./mvnw -B clean verify
