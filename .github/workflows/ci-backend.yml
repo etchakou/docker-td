@@ -20,26 +20,14 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Debug workspace
-        shell: bash
-        run: |
-          echo "PWD (root workspace) = $(pwd)"
-          ls -la
-          echo "---- backend-api listing ----"
-          ls -la backend-api || true
-
-      # On rend le wrapper exécutable par son chemin depuis la racine
       - name: Make mvnw executable
-        shell: bash
         run: chmod +x backend-api/mvnw
 
-      # Lancement du build en pointant explicitement vers le POM
-      - name: Build & test with Maven Wrapper (explicit -f)
-        shell: bash
-        run: |
-          ./backend-api/mvnw -B -f backend-api/pom.xml clean verify
-      build-and-push-docker-image:
-    needs: test-backend           # n'exécute ce job que si les tests sont VERTS
+      - name: Build & test with Maven Wrapper
+        run: ./backend-api/mvnw -B -f backend-api/pom.xml clean verify
+
+  build-and-push-docker-image:
+    needs: test-backend
     runs-on: ubuntu-24.04
 
     steps:
@@ -49,15 +37,13 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      # Backend API
       - name: Build & (conditionally) push backend-api image
         uses: docker/build-push-action@v6
         with:
-          context: ./backend-api         # chemin du Dockerfile du backend
+          context: ./backend-api
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-backend:latest
           push: ${{ github.ref == 'refs/heads/main' }}
 
-      # Base de données (seulement si un Dockerfile existe dans /db)
       - name: Build & (conditionally) push db image
         if: ${{ hashFiles('db/Dockerfile') != '' }}
         uses: docker/build-push-action@v6
