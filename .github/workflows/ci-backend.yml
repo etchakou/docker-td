@@ -9,11 +9,6 @@ jobs:
   test-backend:
     runs-on: ubuntu-24.04
 
-    # Par défaut, toutes les commandes 'run:' s'exécutent dans backend-api
-    defaults:
-      run:
-        working-directory: backend-api
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,8 +20,24 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # Debug: vérifier où on se trouve et ce qu'il y a dedans
+      - name: Debug paths (root)
+        run: |
+          pwd
+          ls -la
+
+      - name: Debug paths (backend-api)
+        working-directory: backend-api
+        run: |
+          pwd
+          ls -la
+          test -f pom.xml && echo "pom.xml found ✅" || (echo "pom.xml missing ❌" && exit 1)
+          test -f mvnw && echo "mvnw found ✅" || (echo "mvnw missing ❌" && exit 1)
+
       - name: Make mvnw executable (Linux)
+        working-directory: backend-api
         run: chmod +x mvnw
 
       - name: Build & test with Maven Wrapper
+        working-directory: backend-api
         run: ./mvnw -B clean verify
