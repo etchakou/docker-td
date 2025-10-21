@@ -51,3 +51,10 @@ jobs:
           context: ./db
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-db:latest
           push: ${{ github.ref == 'refs/heads/main' }}
+        
+      - name: SonarCloud analysis
+        run: ./backend-api/mvnw -B verify sonar:sonar -DskipTests=false \
+          -Dsonar.projectKey=etchakou_docker-td \
+          -Dsonar.organization=etchakou \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
