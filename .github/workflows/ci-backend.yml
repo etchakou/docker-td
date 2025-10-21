@@ -20,5 +20,9 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # Important sur Linux : rendre le wrapper exécutable
+      - name: Make mvnw executable
+        run: chmod +x ./backend-api/mvnw
+
       - name: Build & test with Maven Wrapper
         run: ./backend-api/mvnw -B clean verify
