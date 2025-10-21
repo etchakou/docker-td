@@ -22,7 +22,10 @@ jobs:
 
       # Important sur Linux : rendre le wrapper exécutable
       - name: Make mvnw executable
-        run: chmod +x ./backend-api/mvnw
+        working-directory: ./backend-api
+        run: chmod +x mvnw
 
       - name: Build & test with Maven Wrapper
-        run: ./backend-api/mvnw -B clean verify
+        working-directory: ./backend-api
+        run: ./mvnw -B clean verify
+
