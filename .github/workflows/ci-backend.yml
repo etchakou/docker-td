@@ -9,6 +9,11 @@ jobs:
   test-backend:
     runs-on: ubuntu-24.04
 
+    # Par défaut, toutes les commandes 'run:' s'exécutent dans backend-api
+    defaults:
+      run:
+        working-directory: backend-api
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,12 +25,8 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Important sur Linux : rendre le wrapper exécutable
-      - name: Make mvnw executable
-        working-directory: ./backend-api
+      - name: Make mvnw executable (Linux)
         run: chmod +x mvnw
 
       - name: Build & test with Maven Wrapper
-        working-directory: ./backend-api
         run: ./mvnw -B clean verify
-
