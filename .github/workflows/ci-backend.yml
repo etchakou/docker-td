@@ -19,7 +19,7 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # Normaliser mvnw (CRLF -> LF) et le rendre exÃ©cutable
+      # Normaliser mvnw (CRLF -> LF) et le rendre exécutable
       - name: Normalize mvnw line endings & make executable
         run: |
           sed -i 's/\r$//' backend-api/mvnw
