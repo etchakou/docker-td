@@ -19,23 +19,19 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Make mvnw executable
-        run: chmod +x backend-api/mvnw
+      # Normaliser mvnw (CRLF -> LF) et le rendre exécutable
+      - name: Normalize mvnw line endings & make executable
+        run: |
+          sed -i 's/\r$//' backend-api/mvnw
+          chmod +x backend-api/mvnw
+          head -n 1 backend-api/mvnw
 
       - name: Build & test with Maven Wrapper
         run: ./backend-api/mvnw -B -f backend-api/pom.xml clean verify
 
-      # (fix) Redonner l'exécutable juste avant Sonar pour éviter "Permission denied"
-      - name: Ensure mvnw is executable (for Sonar step)
-        run: chmod +x backend-api/mvnw
-
+      # SonarCloud (commande en UNE SEULE LIGNE + -f pour pointer le POM)
       - name: SonarCloud analysis
-        run: |
-          ./backend-api/mvnw -B verify sonar:sonar -DskipTests=false \
-            -Dsonar.projectKey=etchakou_docker-td \
-            -Dsonar.organization=etchakou \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        run: sh ./backend-api/mvnw -B -f backend-api/pom.xml verify sonar:sonar -DskipTests=false -Dsonar.projectKey=etchakou_docker-td -Dsonar.organization=etchakou -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
   build-and-push-docker-image:
     needs: test-backend
@@ -47,17 +43,17 @@ jobs:
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Normalize mvnw line endings and make executable
-        run: |
-          sed -i 's/\r$//' backend-api/mvnw
-          chmod +x backend-api/mvnw
-          head -n 1 backend-api/mvnw
+      - name: Build & (conditionally) push backend-api image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend-api
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-backend:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: SonarCloud analysis
-        run: |
-          ./backend-api/mvnw -B verify sonar:sonar -DskipTests=false \
-            -Dsonar.projectKey=etchakou_docker-td \
-            -Dsonar.organization=etchakou \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
+      - name: Build & (conditionally) push db image
+        if: ${{ hashFiles('db/Dockerfile') != '' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./db
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-td-db:latest
+          push: ${{ github.ref == 'refs/heads/main' }}
